@@ -34,6 +34,16 @@ WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH ?= "/var/www/"
 WPE_SNAPSHOT ?= ""
 WPE_SNAPSHOT_rpi = "snapshot"
 
+TVCONTROL_DVB ?= "false"
+TVCONTROL_PACKAGES = "dvb-apps"
+
+WPE_TVCONTROL ?= ""
+WPE_TVCONTROL_rpi = "tvcontrol"
+WPE_TVCONTROL_FREQUENCY_LIST = "375"
+WPE_TVCONTROL_TUNE_PARAM = "SYMBOL_RATE=6900000"
+WPE_TVCONTROL_COUNTRY_REGION_ID = "0"
+WPE_TVCONTROL_COUNTRY_CODE = "GBR"
+
 ## Compositor settings, if Wayland is in the distro set the implementation to Wayland with Westeros dependency
 WPE_COMPOSITOR ?= "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'compositor', '', d)}"
 WPE_COMPOSITOR_IMPL = "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'Wayland', 'None', d)}"
@@ -46,7 +56,7 @@ WPE_COMPOSITOR_DEP_nexus = "broadcom-refsw"
 
 inherit cmake pkgconfig
 
-PACKAGECONFIG ?= "commander ${WPE_COMPOSITOR} deviceinfo remote remote-uinput ${WPE_SNAPSHOT} tracing virtualinput webkitbrowser webshell webserver youtube"
+PACKAGECONFIG ?= "commander ${WPE_COMPOSITOR} deviceinfo remote remote-uinput ${WPE_SNAPSHOT} tracing virtualinput webkitbrowser webshell webserver youtube ${WPE_TVCONTROL}"
 
 PACKAGECONFIG[commander]      = "-DWPEFRAMEWORK_PLUGIN_COMMANDER=ON,-DWPEFRAMEWORK_PLUGIN_COMMANDER=OFF,"
 PACKAGECONFIG[compositor]     = "-DWPEFRAMEWORK_PLUGIN_COMPOSITOR=ON -DWPEFRAMEWORK_PLUGIN_COMPOSITOR_IMPLEMENTATION=${WPE_COMPOSITOR_IMPL} -DWPEFRAMEWORK_PLUGIN_COMPOSITOR_VIRTUALINPUT=ON,-DWPEFRAMEWORK_PLUGIN_COMPOSITOR=OFF,${WPE_COMPOSITOR_DEP}"
@@ -85,7 +95,8 @@ PACKAGECONFIG[webserver]      = "-DWPEFRAMEWORK_PLUGIN_WEBSERVER=ON \
 PACKAGECONFIG[webshell]       = "-DWPEFRAMEWORK_PLUGIN_WEBSHELL=ON,-DWPEFRAMEWORK_PLUGIN_WEBSHELL=OFF,"
 PACKAGECONFIG[wifi]           = "-DWPEFRAMEWORK_PLUGIN_WIFISETUP=ON,-DWPEFRAMEWORK_PLUGIN_WIFISETUP=OFF,"
 PACKAGECONFIG[youtube]        = "-DWPEFRAMEWORK_PLUGIN_WEBKITBROWSER_YOUTUBE=ON, -DWPEFRAMEWORK_PLUGIN_WEBKITBROWSER_YOUTUBE=OFF,,wpeframework-dialserver"
-
+PACKAGECONFIG[tvcontrol]      = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL=ON -DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="${TVCONTROL_DVB}" \
+    ,-DWPEFRAMEWORK_PLUGIN_TVCONTROL=OFF,sqlite,${TVCONTROL_PACKAGES}"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -99,6 +110,10 @@ do_install_append() {
           install -d ${D}/var/www
           install -m 0755 ${WORKDIR}/index.html ${D}/var/www/
       fi
+      #if ${@bb.utils.contains("PACKAGECONFIG", "tvcontrol-rpi", "true", "false", d)}
+      #then
+          #sed -e "s|%FREQUENCY_LIST%|${WPE_TVCONTROL_FREQUENCY_LIST}|g" > ${D}${systemd_unitdir}/system/wpeframework.service
+      #fi
       install -d ${D}${WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH}
     fi
 }
