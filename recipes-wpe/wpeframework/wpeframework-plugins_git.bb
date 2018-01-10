@@ -4,14 +4,14 @@ SECTION = "wpe"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
 
-DEPENDS = "wpeframework"
+DEPENDS = "wpeframework dvb-apps"
 
 PV = "3.0+gitr${SRCPV}"
 
-SRC_URI = "git://git@github.com/WebPlatformForEmbedded/WPEFrameworkPlugins.git;protocol=ssh;branch=master \
+SRC_URI = "git://git@github.com/WebPlatformForEmbedded/WPEFrameworkPlugins.git;protocol=ssh;branch=tvcontrol \
           file://0001-Compositor-Disable-building-of-the-Wayland-test-clie.patch \
           file://index.html"
-SRCREV = "9712f54e9ad5136ce935350bdfa66f2b22f17e18"
+SRCREV = "6dff1a870234ca77f5d6e8302d7b8460a4330d5a"
 
 S = "${WORKDIR}/git"
 
@@ -34,11 +34,12 @@ WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH ?= "/var/www/"
 WPE_SNAPSHOT ?= ""
 WPE_SNAPSHOT_rpi = "snapshot"
 
-TVCONTROL_DVB ?= "false"
-TVCONTROL_PACKAGES = "dvb-apps"
+WPE_TVCONTROL_DVB ?= "false"
+WPE_TVCONTROL_PACKAGES = ""
+WPE_TVCONTROL_PACKAGES_rpi = "dvb-apps"
 
 WPE_TVCONTROL ?= ""
-WPE_TVCONTROL_rpi = "tvcontrol"
+WPE_TVCONTROL_rpi = "tvcontrol-rpi"
 WPE_TVCONTROL_FREQUENCY_LIST = "375"
 WPE_TVCONTROL_TUNE_PARAM = "SYMBOL_RATE=6900000"
 WPE_TVCONTROL_COUNTRY_REGION_ID = "0"
@@ -95,8 +96,9 @@ PACKAGECONFIG[webserver]      = "-DWPEFRAMEWORK_PLUGIN_WEBSERVER=ON \
 PACKAGECONFIG[webshell]       = "-DWPEFRAMEWORK_PLUGIN_WEBSHELL=ON,-DWPEFRAMEWORK_PLUGIN_WEBSHELL=OFF,"
 PACKAGECONFIG[wifi]           = "-DWPEFRAMEWORK_PLUGIN_WIFISETUP=ON,-DWPEFRAMEWORK_PLUGIN_WIFISETUP=OFF,"
 PACKAGECONFIG[youtube]        = "-DWPEFRAMEWORK_PLUGIN_WEBKITBROWSER_YOUTUBE=ON, -DWPEFRAMEWORK_PLUGIN_WEBKITBROWSER_YOUTUBE=OFF,,wpeframework-dialserver"
-PACKAGECONFIG[tvcontrol]      = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL=ON -DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="${TVCONTROL_DVB}" \
-    ,-DWPEFRAMEWORK_PLUGIN_TVCONTROL=OFF,sqlite,${TVCONTROL_PACKAGES}"
+PACKAGECONFIG[tvcontrol-rpi]      = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL=ON -DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="${WPE_TVCONTROL_DVB}" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_FREQUENCY_LIST=${WPE_TVCONTROL_FREQUENCY_LIST} \
+    ,-DWPEFRAMEWORK_PLUGIN_TVCONTROL=OFF,sqlite,${WPE_TVCONTROL_PACKAGES}"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -110,10 +112,6 @@ do_install_append() {
           install -d ${D}/var/www
           install -m 0755 ${WORKDIR}/index.html ${D}/var/www/
       fi
-      #if ${@bb.utils.contains("PACKAGECONFIG", "tvcontrol-rpi", "true", "false", d)}
-      #then
-          #sed -e "s|%FREQUENCY_LIST%|${WPE_TVCONTROL_FREQUENCY_LIST}|g" > ${D}${systemd_unitdir}/system/wpeframework.service
-      #fi
       install -d ${D}${WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH}
     fi
 }

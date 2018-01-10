@@ -4,7 +4,9 @@ SUMMARY = "Linux DVB API applications and utilities"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe"
 
-SRC_URI = "hg://linuxtv.org/hg;module=dvb-apps;protocol=http"
+SRC_URI = "hg://linuxtv.org/hg;module=dvb-apps;protocol=http \
+          file://dvb-fe-xc5000c-4.1.30.7.fw \
+          "
 SRCREV = "3fc7dfa68484"
 
 S = "${WORKDIR}/${BPN}"
@@ -42,6 +44,8 @@ do_install() {
     install -m 0755 ${S}/test/test_pes        ${D}${bindir}/
     install -m 0755 ${S}/test/test_dvr        ${D}${bindir}/
 
+    install -d ${D}/lib/firmware
+    install -m 0644 ${WORKDIR}/*.fw ${D}/lib/firmware/
     cp -pPR ${S}/util/szap/channels-conf* ${D}/${docdir}/dvb-apps/szap/
     cp -pPR ${S}/util/szap/README   ${D}/${docdir}/dvb-apps/szap/
 }
@@ -70,7 +74,7 @@ PACKAGES =+ "dvb-evtest dvb-evtest-dbg \
 PACKAGES =+ "libdvbapi libdvbcfg libdvben50221 \
             libesg libucsi libdvbsec"
 
-FILES_${PN} = "${bindir} ${datadir}/dvb"
+FILES_${PN} = "${bindir} ${datadir}/dvb lib/firmware"
 FILES_${PN}-doc = ""
 FILES_${PN}-dev = "${includedir}"
 
