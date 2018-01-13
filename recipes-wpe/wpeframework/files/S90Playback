@@ -18,7 +18,7 @@ start() {
             state=$(cat /etc/TVTune.txt |cut -f 1 -d ":" )
             if [ "$state" = "STOP" ]; then
                 if [ "$state" != "$old_state" ]; then
-                     if [ -f /var/run/player.pid ]; then        
+                     if [ -f /var/run/player.pid ]; then
                          start-stop-daemon -K -q -p /var/run/player.pid
                       fi
                 fi

@@ -36,21 +36,24 @@ WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH ?= "/var/www/"
 WPE_SNAPSHOT ?= ""
 WPE_SNAPSHOT_rpi = "snapshot"
 
-WPE_TVCONTROL_DVB ?= "false"
+WPE_TVCONTROL ?= ""
+WPE_TVCONTROL_rpi = "tvcontrol"
+
 WPE_TVCONTROL_PACKAGES = ""
 WPE_TVCONTROL_PACKAGES_rpi = "dvb-apps inotify-tools"
 
-WPE_TVCONTROL ?= ""
-WPE_TVCONTROL_rpi = "tvcontrol-rpi"
-WPE_TVCONTROL_FREQUENCY_LIST = "575"
-WPE_TVCONTROL_TUNE_PARAM = "SYMBOL_RATE=6900000"
-WPE_TVCONTROL_COUNTRY_REGION_ID = "0"
-WPE_TVCONTROL_COUNTRY_CODE = "GBR"
+RDEPS_TVCONTROL ?= ""
+RDEPS_TVCONTROL_rpi = "gstreamer1.0-plugins-bad-dvb"
 
-RDEPS_TVCONTROL = ""
-
-RDEPS_TVCONTROL_rpi = " \
-    gstreamer1.0-plugins-bad-dvb \
+WPE_TVCONTROL_FLAGS ?= ""
+WPE_TVCONTROL_FLAGS_rpi = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="false" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_FREQUENCY_LIST="575" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_COUNTRY_REGION_ID="0" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_COUNTRY_CODE="GBR" \
+    "
+WPE_TVCONTROL_FLAGS_bcm = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="true" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_FREQUENCY_LIST="575" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_TUNE_PARAM="SYMBOL_RATE=6900000" \
     "
 
 ## Compositor settings, if Wayland is in the distro set the implementation to Wayland with Westeros dependency
@@ -104,9 +107,8 @@ PACKAGECONFIG[webserver]      = "-DWPEFRAMEWORK_PLUGIN_WEBSERVER=ON \
 PACKAGECONFIG[webshell]       = "-DWPEFRAMEWORK_PLUGIN_WEBSHELL=ON,-DWPEFRAMEWORK_PLUGIN_WEBSHELL=OFF,"
 PACKAGECONFIG[wifi]           = "-DWPEFRAMEWORK_PLUGIN_WIFISETUP=ON,-DWPEFRAMEWORK_PLUGIN_WIFISETUP=OFF,"
 PACKAGECONFIG[youtube]        = "-DWPEFRAMEWORK_PLUGIN_WEBKITBROWSER_YOUTUBE=ON, -DWPEFRAMEWORK_PLUGIN_WEBKITBROWSER_YOUTUBE=OFF,,wpeframework-dialserver"
-PACKAGECONFIG[tvcontrol-rpi]      = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL=ON -DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="${WPE_TVCONTROL_DVB}" \
-    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_FREQUENCY_LIST=${WPE_TVCONTROL_FREQUENCY_LIST} \
-    ,-DWPEFRAMEWORK_PLUGIN_TVCONTROL=OFF,sqlite,${WPE_TVCONTROL_PACKAGES},${RDEPS_TVCONTROL}"
+PACKAGECONFIG[tvcontrol]      = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL=ON \
+    ${WPE_TVCONTROL_FLAGS} ,-DWPEFRAMEWORK_PLUGIN_TVCONTROL=OFF,sqlite,${WPE_TVCONTROL_PACKAGES},${RDEPS_TVCONTROL}"
 
 EXTRA_OECMAKE += " \
     -DBUILD_REFERENCE=${SRCREV} \
@@ -120,10 +122,12 @@ do_install_append() {
           install -d ${D}/var/www
           install -m 0755 ${WORKDIR}/index.html ${D}/var/www/
       fi
-      if ${@bb.utils.contains("PACKAGECONFIG", "tvcontrol-rpi", "true", "false", d)}
+      if ${@bb.utils.contains("PACKAGECONFIG", "tvcontrol", "true", "flase", d)}
       then
-          install -d ${D}${sysconfdir}/init.d
-          install -m 0755 ${WORKDIR}/S90Playback ${D}${sysconfdir}/init.d
+          if [ "${SOC_FAMILY}" = "rpi" ]; then
+              install -d ${D}${sysconfdir}/init.d
+              install -m 0755 ${WORKDIR}/S90Playback ${D}${sysconfdir}/init.d
+          fi
       fi
       install -d ${D}${WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH}
     fi
