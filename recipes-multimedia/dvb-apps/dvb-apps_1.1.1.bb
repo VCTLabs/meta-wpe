@@ -6,10 +6,13 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe"
 
 SRC_URI = "hg://linuxtv.org/hg;module=dvb-apps;protocol=http \
           file://dvb-fe-xc5000c-4.1.30.7.fw \
+          file://dvb-scan-table \
           "
-SRCREV = "3fc7dfa68484"
+SRCREV = "3d43b280298c39a67d1d889e01e173f52c12da35"
 
 S = "${WORKDIR}/${BPN}"
+
+DVB_WINTV_TUNER = "true"
 
 TARGET_CC_ARCH += "${LDFLAGS}"
 INSANE_SKIP_${PN} = "ldflags"
@@ -44,10 +47,14 @@ do_install() {
     install -m 0755 ${S}/test/test_pes        ${D}${bindir}/
     install -m 0755 ${S}/test/test_dvr        ${D}${bindir}/
 
-    install -d ${D}/lib/firmware
-    install -m 0644 ${WORKDIR}/*.fw ${D}/lib/firmware/
+    if [ "${DVB_WINTV_TUNER}" = "true" ]; then
+        install -d ${D}/lib/firmware
+        install -m 0644 ${WORKDIR}/*.fw ${D}/lib/firmware/
+    fi
     cp -pPR ${S}/util/szap/channels-conf* ${D}/${docdir}/dvb-apps/szap/
     cp -pPR ${S}/util/szap/README   ${D}/${docdir}/dvb-apps/szap/
+
+    cp -pPR ${WORKDIR}/dvb-scan-table/* ${D}/usr/share/dvb
 }
 
 python populate_packages_prepend () {
