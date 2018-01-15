@@ -4,14 +4,15 @@ SECTION = "wpe"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
 
-DEPENDS = "wpeframework dvb-apps inotify-tools"
+DEPENDS = "wpeframework dvb-apps inotify-tools alsa-lib"
 
 PV = "3.0+gitr${SRCPV}"
 
 SRC_URI = "git://git@github.com/WebPlatformForEmbedded/WPEFrameworkPlugins.git;protocol=ssh;branch=tvcontrol \
           file://0001-Compositor-Disable-building-of-the-Wayland-test-clie.patch \
           file://index.html \
-          file://S90Playback"
+          file://wpeframework-plugins-tvcontrol-init \
+          file://wpeframework-plugins-tvcontrol.service "
 
 SRCREV = "4a36356d256504ce7c1423b27ede9fd5007fa4aa"
 
@@ -43,16 +44,18 @@ WPE_TVCONTROL_PACKAGES = ""
 WPE_TVCONTROL_PACKAGES_rpi = "dvb-apps inotify-tools"
 
 RDEPS_TVCONTROL ?= ""
-RDEPS_TVCONTROL_rpi = "gstreamer1.0-plugins-bad-dvb"
+RDEPS_TVCONTROL_rpi = "gstreamer1.0-plugins-bad-dvb \
+    gstreamer1.0-plugins-base-alsa \
+    gstreamer1.0-libav"
 
 WPE_TVCONTROL_FLAGS ?= ""
 WPE_TVCONTROL_FLAGS_rpi = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="false" \
     -DWPEFRAMEWORK_PLUGINS_TVCONTROL_FREQUENCY_LIST="575" \
-    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_COUNTRY_REGION_ID="0" \
-    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_COUNTRY_CODE="GBR" \
     "
 WPE_TVCONTROL_FLAGS_bcm = "-DWPEFRAMEWORK_PLUGIN_TVCONTROL_DVB="true" \
     -DWPEFRAMEWORK_PLUGINS_TVCONTROL_FREQUENCY_LIST="575" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_COUNTRY_REGION_ID="0" \
+    -DWPEFRAMEWORK_PLUGINS_TVCONTROL_COUNTRY_CODE="GBR" \
     -DWPEFRAMEWORK_PLUGINS_TVCONTROL_TUNE_PARAM="SYMBOL_RATE=6900000" \
     "
 
@@ -66,7 +69,7 @@ WPE_COMPOSITOR_nexus = "compositor"
 WPE_COMPOSITOR_IMPL_nexus = "Nexus"
 WPE_COMPOSITOR_DEP_nexus = "broadcom-refsw"
 
-inherit cmake pkgconfig
+inherit cmake pkgconfig systemd update-rc.d
 
 PACKAGECONFIG ?= "commander ${WPE_COMPOSITOR} deviceinfo remote remote-uinput ${WPE_SNAPSHOT} tracing virtualinput webkitbrowser webshell webserver youtube ${WPE_TVCONTROL}"
 
@@ -125,14 +128,31 @@ do_install_append() {
       if ${@bb.utils.contains("PACKAGECONFIG", "tvcontrol", "true", "flase", d)}
       then
           if [ "${SOC_FAMILY}" = "rpi" ]; then
-              install -d ${D}${sysconfdir}/init.d
-              install -m 0755 ${WORKDIR}/S90Playback ${D}${sysconfdir}/init.d
+              if ${@bb.utils.contains("DISTRO_FEATURES", "systemd", "true", "false", d)}; then
+                  install -d ${D}${systemd_unitdir}/system
+                  install -m 0755 ${WORKDIR}/wpeframework-plugins-tvcontrol.service ${D}${systemd_unitdir}/system/wpeframework-plugins-tvcontrol.service
+              else
+                  install -d ${D}${sysconfdir}/init.d
+                  install -m 0755 ${WORKDIR}/wpeframework-plugins-tvcontrol-init ${D}${sysconfdir}/init.d/wpeframework-plugins-tvcontrol
+              fi
           fi
       fi
       install -d ${D}${WPEFRAMEWORK_PLUGIN_WEBSERVER_PATH}
     fi
 }
 
+SYSTEMD_SERVICE_${PN} = "wpeframework-plugins-tvcontrol.service"
+PACKAGES =+ "${PN}-initscript"
+
+FILES_${PN}-initscript = "${sysconfdir}/init.d/wpeframework-plugins-tvcontrol"
+
+# ----------------------------------------------------------------------------
+
+INITSCRIPT_PACKAGES = "${PN}-initscript"
+INITSCRIPT_NAME_${PN}-initscript = "wpeframework-plugins-tvcontrol"
+INITSCRIPT_PARAMS_${PN}-initscript = "defaults 90 90"
+
+RRECOMMENDS_${PN} = "${PN}-initscript"
 # ----------------------------------------------------------------------------
 
 FILES_SOLIBSDEV = ""
