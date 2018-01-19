@@ -7,7 +7,13 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=751419260aa954499f7abaabaa882bbe"
 SRC_URI = "hg://linuxtv.org/hg;module=dvb-apps;protocol=http \
           file://dvb-fe-xc5000c-4.1.30.7.fw \
           file://dvb-scan-table \
+          file://0001-Fix-generate-keynames.patch \
+          file://0002-Fix-compiler-warning-flags.patch \
+          file://0003-handle-static-shared-only-build.patch \
+          file://0004-Makefile-remove-test.patch \
+          file://0005-libucsi-optimization-removal.patch \
           "
+
 SRCREV = "3d43b280298c39a67d1d889e01e173f52c12da35"
 
 S = "${WORKDIR}/${BPN}"
